@@ -1,0 +1,48 @@
+I want to create a POC on "openai-node". Below is my weekly topics that I want to cover in my POC. Create a fully working POC for me taking into account all the topics mentioned in the Weekly Schedule. 
+- The POC should be able to run locally on the windows platform.
+- All the code should have a proper commenting to understand what it is doing
+- The JSDoc comment formatting standard should be followed.
+- I should have a proper folder structure that represent each week's assignment.
+- All the env variables should be in a different .env file.
+- All the npm packages should be latest.
+- The code should be easy to read and understand for a beginner in openai-node
+
+Here is my assignment for the POC in openai-node:
+
+Week 1 – Setup & Chat Basics
+Goal: Get your project running, and learn Chat Completions (the core of openai-node).
+Tasks:
+•	Setup project (npm init, install openai, setup .env).
+•	Write a simple script (index.js) to connect to OpenAI and print a response.
+•	Implement basic chat with system, user, and assistant roles.
+•	Add chat history memory (store messages in an array).
+•	Try streaming responses (simulate typing effect).
+Deliverable: A working CLI or API endpoint that lets you chat with GPT-4o-mini.
+
+Week 2 – Knowledge Base with Embeddings
+Goal: Learn how to make the assistant smarter with your own documents.
+Tasks:
+•	Create a small document set (docs/faq.txt).
+•	Generate embeddings for each doc using text-embedding-3-small.
+•	Implement cosine similarity search to find the closest doc to a query.
+•	Build a flow: User asks → Search docs → Pass best match + user query to Chat model.
+Deliverable: You can ask the assistant questions about your docs, and it answers correctly.
+
+Week 3 – Images, Audio & Moderation
+Goal: Add multimedia capabilities.
+Tasks:
+•	Image Generation: Generate images from prompts and add a route `/image?prompt=...`.
+•	Audio: Transcribe an .mp3 file to text (Speech-to-Text).
+•	Audio: Convert AI response to .mp3 (Text-to-Speech).
+•	Moderation: Before processing a user’s input, run it through the Moderation API. If flagged → return a safe response.
+Deliverable: Your assistant can generate images, understand audio input, reply with speech, and reject unsafe queries.
+
+Week 4 – Integration & Mini Project
+Goal: Combine everything into a polished POC.
+Tasks:
+•	Build a single `/chat` endpoint that integrates moderation, embeddings, general chat, or image request, and supports optional voice input/output.
+•	Add a simple frontend: CLI (Node.js readline) or React web app with chat UI.
+•	Store embeddings in memory or JSON file (optionally try Supabase / Pinecone).
+•	Polish the flow: welcome message, clear instructions.
+
+Final Deliverable: A working AI Personal Assistant POC with chat, knowledge base Q&A, image generation, audio transcription & speech replies, and moderation.
