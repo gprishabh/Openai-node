@@ -219,7 +219,7 @@ export function MessageList({ messages, isLoading }: MessageListProps) {
               </div>
               
               <p className="text-xs text-slate-400 mt-2">
-                {message.timestamp.toLocaleTimeString()}
+                {new Date(message.timestamp).toLocaleTimeString()}
               </p>
             </div>
 
