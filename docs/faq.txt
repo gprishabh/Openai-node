@@ -1,0 +1,158 @@
+OpenAI Node.js POC - Frequently Asked Questions
+
+Q: What is this POC about?
+A: This is a comprehensive Proof of Concept demonstrating OpenAI's capabilities using Node.js. It covers chat completions, embeddings-based knowledge retrieval, multimedia processing (images and audio), and content moderation across a 4-week development timeline.
+
+Q: What OpenAI models are used in this POC?
+A: The POC uses several OpenAI models:
+- GPT-5 for chat completions and text generation
+- text-embedding-3-small for generating document embeddings
+- DALL-E 3 for image generation
+- Whisper-1 for audio transcription
+- TTS-1 for text-to-speech synthesis
+- OpenAI Moderation API for content safety
+
+Q: How does the knowledge base feature work?
+A: The knowledge base uses a Retrieval Augmented Generation (RAG) approach:
+1. Documents are split into chunks and converted to embeddings using text-embedding-3-small
+2. When you ask a question, it's also converted to an embedding
+3. We use cosine similarity to find the most relevant document chunks
+4. The relevant content is provided as context to GPT-5 for generating accurate answers
+
+Q: What file formats are supported for document upload?
+A: The knowledge base supports:
+- Plain text files (.txt)
+- PDF documents (.pdf) 
+- Microsoft Word documents (.docx)
+
+Q: What audio formats can be transcribed?
+A: The audio transcription feature supports:
+- MP3 (.mp3)
+- WAV (.wav)
+- M4A (.m4a)
+- MP4 (.mp4)
+- MPEG (.mpeg)
+- MPGA (.mpga)
+- WEBM (.webm)
+
+Q: How does content moderation work?
+A: Content moderation uses OpenAI's Moderation API to check for:
+- Hate speech and threatening language
+- Harassment and bullying
+- Self-harm content
+- Sexual content
+- Violence and graphic content
+The system assigns risk levels and can automatically block or warn about problematic content.
+
+Q: Can I disable certain features?
+A: Yes! The POC includes feature toggles that allow you to enable or disable:
+- Basic chat functionality
+- Knowledge base queries
+- Image generation
+- Audio input/transcription
+- Text-to-speech output
+- Content moderation
+
+Q: How do I set up the POC locally?
+A: Follow these steps:
+1. Clone the repository
+2. Copy .env.example to .env and add your OpenAI API key
+3. Run `npm install` to install dependencies
+4. Run `npm run dev` to start the development server
+5. Access the web interface at http://localhost:5000
+
+Q: Is there a CLI interface?
+A: Yes! The POC includes a comprehensive CLI interface. Run it with:
+`npm run cli`
+
+The CLI supports all POC features including chat, document upload, image generation, audio processing, and moderation.
+
+Q: What are the main CLI commands?
+A: Key CLI commands include:
+- `/help` - Show all available commands
+- `/upload <file>` - Upload document to knowledge base
+- `/image <prompt>` - Generate image from text prompt
+- `/transcribe <file>` - Transcribe audio file
+- `/tts <text>` - Convert text to speech
+- `/moderate <text>` - Check content moderation
+- `/features` - Show current feature status
+- `/enable <feature>` - Enable a specific feature
+- `/stats` - Show session statistics
+
+Q: How are embeddings calculated?
+A: The POC uses cosine similarity to compare embeddings:
+1. Each document chunk gets converted to a 1536-dimensional vector
+2. Query text is converted to the same vector space
+3. Cosine similarity measures the angle between vectors
+4. Results are ranked by similarity score (0-1 scale)
+5. Only chunks above a minimum similarity threshold are used
+
+Q: What image styles and sizes are supported?
+A: DALL-E 3 supports:
+- Sizes: 1024x1024, 1024x1792, 1792x1024
+- Quality: standard, hd
+- Styles: vivid, natural
+
+Q: How does streaming work?
+A: The chat feature supports streaming responses where:
+- Text appears word-by-word as it's generated
+- Provides real-time feedback
+- Can be enabled/disabled via the UI toggle
+- Uses Server-Sent Events for real-time updates
+
+Q: Are there rate limits?
+A: Yes, the POC respects OpenAI's rate limits:
+- Chat completions: Varies by plan
+- Image generation: Varies by plan
+- Audio transcription: 25MB file size limit
+- Embeddings: Processed in batches to avoid limits
+
+Q: How is session data managed?
+A: The POC uses in-memory storage by default:
+- Each session gets a unique ID
+- Chat history, settings, and statistics are tracked per session
+- Data persists during the application runtime
+- For production, this would use a proper database
+
+Q: What statistics are tracked?
+A: The POC tracks comprehensive usage statistics:
+- Total messages sent and received
+- Number of images generated
+- Audio transcriptions performed
+- Knowledge base queries made
+- Content moderation checks
+- Token usage across all APIs
+- Session duration and activity
+
+Q: How do I troubleshoot API errors?
+A: Common solutions:
+1. Verify your OpenAI API key is set correctly in .env
+2. Check your OpenAI account has sufficient credits
+3. Ensure you're not hitting rate limits
+4. Check the console logs for specific error messages
+5. Verify file formats match supported types for uploads
+
+Q: Can I extend the POC with additional features?
+A: Absolutely! The POC is designed to be extensible:
+- Services are modular and can be enhanced
+- New OpenAI models can be easily integrated
+- Additional file formats can be supported
+- Custom processing pipelines can be added
+- The UI components are reusable and customizable
+
+Q: What's the difference between general chat and knowledge base queries?
+A: General chat uses only the AI model's training data, while knowledge base queries:
+- Search through your uploaded documents first
+- Provide relevant context to the AI model
+- Show source documents and similarity scores
+- Give more accurate answers about your specific content
+- Indicate confidence levels based on document relevance
+
+Q: How secure is the content moderation?
+A: Content moderation provides multiple safety layers:
+- Real-time checking before processing requests
+- Configurable sensitivity thresholds
+- Detailed categorization of problematic content
+- Automatic blocking of high-risk content
+- Audit trail of all moderation decisions
+- Safe fallback responses for flagged content
