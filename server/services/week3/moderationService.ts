@@ -1,4 +1,4 @@
-import { openai } from "../../config/openai.js";
+import { MODELS, openai } from "../../config/openai.js";
 import type { ModerationRequest, ModerationResponse } from "@shared/schema.js";
 
 /**
@@ -18,6 +18,7 @@ export class ModerationService {
     try {
       // Call OpenAI Moderation API
       const moderation = await openai.moderations.create({
+        model: MODELS.MODERATION,
         input: request.content,
       });
 

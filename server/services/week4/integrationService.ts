@@ -36,6 +36,8 @@ export class IntegrationService {
         features,
       };
 
+      console.log(`Processing request for session ${request.sessionId}:`, features);
+
       // Step 1: Content moderation (if enabled)
       if (features.moderation) {
         const moderationResult = await moderationService.moderateContent({
@@ -62,9 +64,14 @@ export class IntegrationService {
 
       // Step 2: Determine request type and route accordingly
       const requestType = this.analyzeRequestType(request.message);
+
+console.log(`Request type identified as: ${requestType}`);
+
       response.requestType = requestType;
 
-      // Step 3: Process based on request type
+      
+
+      // Step 3: Process based on request type and available features
       switch (requestType) {
         case "image_generation":
           if (features.imageGeneration) {
@@ -85,36 +92,59 @@ export class IntegrationService {
           break;
 
         case "knowledge_base_query":
-          if (features.knowledgeBase) {
-            const kbResponse = await knowledgeBaseService.query({
-              question: request.message,
-              sessionId: request.sessionId,
-              maxResults: 3,
-              minSimilarity: 0.7,
-            });
-            
-            response.knowledgeBase = kbResponse;
-            response.chat = {
-              id: this.generateResponseId(),
-              role: "assistant",
-              content: kbResponse.answer,
-              timestamp: new Date(),
-              sessionId: request.sessionId,
-            };
-          } else {
-            response.chat = await chatService.sendMessage({
-              message: "Knowledge base queries are currently disabled. Please enable the knowledge base feature or upload some documents first.",
-              sessionId: request.sessionId,
-            });
-          }
-          break;
-
         case "general_chat":
         default:
+          // Try knowledge base first if enabled and has documents
+          if (features.knowledgeBase) {
+            try {
+              const kbStats = knowledgeBaseService.getStatistics();
+              console.log(`Knowledge base stats:`, kbStats);
+              
+              if (kbStats.documentCount > 0) {
+                console.log(`Querying knowledge base with question: "${request.message}"`);
+                const kbResponse = await knowledgeBaseService.query({
+                  question: request.message,
+                  sessionId: request.sessionId,
+                  maxResults: 3,
+                  minSimilarity: 0.2, // Much lower threshold for better recall
+                });
+                
+                console.log(`Knowledge base response:`, {
+                  hasContext: kbResponse.hasContext,
+                  confidence: kbResponse.confidence,
+                  sourcesCount: kbResponse.sources.length
+                });
+                
+                // If knowledge base found relevant context, use it
+                if (kbResponse.hasContext && kbResponse.confidence > 0.15) {
+                  response.knowledgeBase = kbResponse;
+                  response.chat = {
+                    id: this.generateResponseId(),
+                    role: "assistant",
+                    content: kbResponse.answer,
+                    timestamp: new Date(),
+                    sessionId: request.sessionId,
+                  };
+                  this.updateStatistics(request.sessionId, "knowledge_base_query");
+                  break;
+                } else {
+                  console.log(`Knowledge base didn't find relevant context (confidence: ${kbResponse.confidence}, hasContext: ${kbResponse.hasContext})`);
+                }
+              } else {
+                console.log(`No documents in knowledge base (count: ${kbStats.documentCount})`);
+              }
+            } catch (error) {
+              console.error("Knowledge base query failed, falling back to general chat:", error);
+            }
+          }
+          
+          // Fall back to general chat
+          console.log("Falling back to general chat");
           response.chat = await chatService.sendMessage({
             message: request.message,
             sessionId: request.sessionId,
           });
+          this.updateStatistics(request.sessionId, "general_chat");
           break;
       }
 

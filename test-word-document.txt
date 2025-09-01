@@ -1,0 +1,32 @@
+OpenAI Integration Features and Capabilities
+
+This document describes the comprehensive OpenAI integration features available in this Node.js application.
+
+Core Features:
+1. Chat Interface - Interactive conversations with GPT models
+2. Knowledge Base - Upload and query documents using embeddings
+3. Image Generation - Create images from text descriptions using DALL-E
+4. Audio Processing - Speech-to-text and text-to-speech capabilities
+5. Content Moderation - Automatic content filtering and safety checks
+
+Technical Implementation:
+- Frontend: React with TypeScript and Vite
+- Backend: Node.js with Express server
+- File Processing: Support for .txt, .pdf, and .docx documents
+- Database: In-memory storage for demonstration purposes
+- AI Models: GPT for chat, DALL-E for images, Whisper for audio
+
+Usage Instructions:
+1. Enable desired features using the sidebar toggles
+2. Upload documents by dragging them to the upload area
+3. Ask questions about uploaded content
+4. Generate images by requesting "create an image of..."
+5. Use voice input when audio features are enabled
+
+The application demonstrates modern AI integration patterns and can serve as a foundation for building more complex AI-powered applications.
+
+For troubleshooting:
+- Ensure your OpenAI API key is properly configured
+- Check that file formats are supported (.txt, .pdf, .docx)
+- Verify that the knowledge base feature is enabled before uploading documents
+- Monitor the console for any error messages during file processing

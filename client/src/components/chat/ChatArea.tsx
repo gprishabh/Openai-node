@@ -131,7 +131,7 @@ export function ChatArea({
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1">
         <MessageList 
           messages={messages} 
           isLoading={isLoading}

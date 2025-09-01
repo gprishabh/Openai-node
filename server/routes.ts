@@ -4,6 +4,7 @@ import { storage } from "./storage.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import mammoth from "mammoth";
 
 // Import all services
 import { chatService } from "./services/week1/chatService.js";
@@ -36,7 +37,7 @@ const upload = multer({
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error(`File type ${file.mimetype} not supported`));
+      cb(new Error(`File type ${file.mimetype} not supported. Please use .txt, .pdf, or .docx files for documents.`));
     }
   },
 });
@@ -49,7 +50,7 @@ const upload = multer({
 export async function registerRoutes(app: Express): Promise<Server> {
   
   // Initialize knowledge base with sample documents
-  await knowledgeBaseService.loadSampleDocuments();
+  //await knowledgeBaseService.loadSampleDocuments();
 
   /**
    * WEEK 1 ROUTES - Chat Basics
@@ -61,6 +62,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
    */
   app.post("/api/chat/init", async (req, res) => {
     try {
+      console.log("/api/chat/init")
       const sessionId = req.body.sessionId || `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const welcomeMessage = await chatService.initializeChat(sessionId);
       
@@ -165,20 +167,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Read file content
       const filepath = req.file.path;
-      const content = fs.readFileSync(filepath, "utf-8");
-      
-      // Process document
-      const result = await knowledgeBaseService.addDocument(req.file.originalname, content);
-      
-      // Clean up uploaded file
-      fs.unlinkSync(filepath);
-      
-      res.json({
-        success: true,
-        result,
-      });
+      let content: string;
+
+      // Read file content based on file type
+      try {
+        if (req.file.mimetype === "text/plain") {
+          content = fs.readFileSync(filepath, "utf-8");
+        } else if (req.file.mimetype === "application/pdf") {
+          // Parse PDF file using dynamic import
+          const pdfParseModule = await import("pdf-parse");
+          const pdfParse = pdfParseModule.default;
+          const pdfBuffer = fs.readFileSync(filepath);
+          const pdfData = await pdfParse(pdfBuffer);
+          content = pdfData.text;
+          
+          if (!content || content.trim().length === 0) {
+            throw new Error("Could not extract text from PDF file. The PDF might be image-based or encrypted.");
+          }
+        } else if (req.file.mimetype === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+          // Parse DOCX file
+          const docxBuffer = fs.readFileSync(filepath);
+          const result = await mammoth.extractRawText({ buffer: docxBuffer });
+          content = result.value;
+          
+          if (!content || content.trim().length === 0) {
+            throw new Error("Could not extract text from Word document.");
+          }
+          
+          // Log any warnings from mammoth
+          if (result.messages && result.messages.length > 0) {
+            console.log("Word document parsing warnings:", result.messages);
+          }
+        } else {
+          throw new Error(`Unsupported file type: ${req.file.mimetype}`);
+        }
+
+        if (!content || content.trim().length === 0) {
+          throw new Error("File appears to be empty or unreadable");
+        }
+
+        // Process document
+        const result = await knowledgeBaseService.addDocument(req.file.originalname, content);
+        
+        // Clean up uploaded file
+        fs.unlinkSync(filepath);
+        
+        res.json({
+          success: true,
+          result,
+          message: `Successfully processed ${req.file.originalname}. Extracted ${content.length} characters.`,
+        });
+      } catch (parseError) {
+        // Clean up uploaded file on error
+        if (fs.existsSync(filepath)) {
+          fs.unlinkSync(filepath);
+        }
+        throw parseError;
+      }
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -239,6 +285,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : "Failed to get documents",
+      });
+    }
+  });
+
+  /**
+   * Remove document from knowledge base
+   * DELETE /api/knowledge-base/documents/:documentId
+   */
+  app.delete("/api/knowledge-base/documents/:documentId", async (req, res) => {
+    try {
+      const { documentId } = req.params;
+      
+      if (!documentId) {
+        return res.status(400).json({
+          success: false,
+          error: "Document ID is required",
+        });
+      }
+
+      const removed = knowledgeBaseService.removeDocument(documentId);
+      
+      if (removed) {
+        res.json({
+          success: true,
+          message: "Document removed successfully",
+          documentId,
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          error: "Document not found",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to remove document",
       });
     }
   });

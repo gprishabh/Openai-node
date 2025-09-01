@@ -1,0 +1,34 @@
+API Configuration and Environment Setup
+
+This document covers the configuration requirements for the OpenAI Node.js application.
+
+Environment Variables Required:
+- OPENAI_API_KEY: Your OpenAI API key for accessing GPT, DALL-E, and Whisper
+- NODE_ENV: Set to 'development' for local development or 'production' for deployment
+- PORT: Server port (default: 5000)
+- MAX_FILE_SIZE: Maximum upload file size in bytes (default: 10MB)
+
+OpenAI Model Configuration:
+- Chat Model: gpt-4 or gpt-3.5-turbo for conversations
+- Embedding Model: text-embedding-ada-002 for knowledge base
+- Image Model: dall-e-3 for image generation
+- Audio Model: whisper-1 for transcription
+- TTS Model: tts-1 for text-to-speech
+
+Security Considerations:
+- API keys should be stored securely in environment variables
+- File uploads are limited to specific MIME types
+- Content moderation is enabled by default
+- Session data is stored in memory (not persistent across restarts)
+
+Performance Optimization:
+- Text chunking for better embedding quality (800 tokens per chunk)
+- Similarity threshold for knowledge base queries (default: 0.6)
+- Request rate limiting may be needed for production use
+- Consider implementing caching for frequently accessed data
+
+Deployment Notes:
+- Build the application using 'npm run build'
+- Set production environment variables
+- Configure proper CORS settings for your domain
+- Monitor API usage and costs through OpenAI dashboard

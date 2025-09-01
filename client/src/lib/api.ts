@@ -72,6 +72,11 @@ export const api = {
     return response.json();
   },
 
+  async removeDocument(documentId: string) {
+    const response = await apiRequest("DELETE", `/api/knowledge-base/documents/${documentId}`);
+    return response.json();
+  },
+
   // Image generation endpoints
   async generateImage(data: {
     prompt: string;

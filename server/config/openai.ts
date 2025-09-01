@@ -1,4 +1,7 @@
 import OpenAI from "openai";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 /**
  * OpenAI configuration and client initialization
@@ -27,9 +30,10 @@ export const openai = new OpenAI({
  * @description Centralized model configuration to ensure consistency across the POC
  */
 export const MODELS = {
-  // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-  CHAT: process.env.OPENAI_MODEL || "gpt-5",
+  // Use gpt-4o as the default chat model (excellent performance and multimodal)
+  CHAT: process.env.OPENAI_MODEL || "gpt-4o",
   EMBEDDING: process.env.OPENAI_EMBEDDING_MODEL || "text-embedding-3-small", 
+  MODERATION: process.env.OPENAI_MODERATION_MODEL || "omni-moderation-latest", 
   IMAGE: process.env.OPENAI_IMAGE_MODEL || "dall-e-3",
   AUDIO: process.env.OPENAI_AUDIO_MODEL || "whisper-1",
   TTS: process.env.OPENAI_TTS_MODEL || "tts-1",

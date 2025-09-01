@@ -67,6 +67,8 @@ export class KnowledgeBaseService {
    */
   async query(query: KnowledgeBaseQuery): Promise<KnowledgeBaseResponse> {
     try {
+      console.log(`Knowledge base query: "${query.question}"`);
+      
       // Generate embedding for the query
       const queryEmbedding = await embeddingService.generateQueryEmbedding(query.question);
 
@@ -76,7 +78,10 @@ export class KnowledgeBaseService {
         allEmbeddings.push(...docEmbeddings);
       }
 
+      console.log(`Total embeddings available: ${allEmbeddings.length}`);
+
       if (allEmbeddings.length === 0) {
+        console.log("No embeddings found, returning no-documents response");
         return {
           answer: "I don't have any documents in my knowledge base yet. Please upload some documents first, and then I'll be able to answer questions based on their content.",
           sources: [],
@@ -92,11 +97,19 @@ export class KnowledgeBaseService {
         query.maxResults || 3
       );
 
+      console.log(`Similar documents found: ${similarDocuments.length}`);
+      if (similarDocuments.length > 0) {
+        console.log(`Top similarity scores: ${similarDocuments.slice(0, 3).map(d => d.similarity.toFixed(3)).join(', ')}`);
+      }
+
       // Filter by minimum similarity threshold
       const minSimilarity = query.minSimilarity || 0.7;
       const relevantDocuments = similarDocuments.filter(doc => doc.similarity >= minSimilarity);
 
+      console.log(`Relevant documents (similarity >= ${minSimilarity}): ${relevantDocuments.length}`);
+
       if (relevantDocuments.length === 0) {
+        console.log("No relevant documents found above threshold");
         return {
           answer: "I couldn't find any relevant information in my knowledge base for your question. The documents I have don't seem to contain information related to your query.",
           sources: [],

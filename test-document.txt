@@ -1,0 +1,40 @@
+OpenAI Knowledge Base Test Document
+
+This is a test document for the OpenAI POC knowledge base functionality.
+
+About the Application:
+The OpenAI Node.js POC is a comprehensive demonstration of various OpenAI API capabilities including:
+- Chat completions using GPT models
+- Text embeddings for knowledge base search
+- Image generation using DALL-E
+- Audio transcription and text-to-speech
+- Content moderation
+
+Key Features:
+1. Chat Interface: Users can have conversations with the AI assistant
+2. Knowledge Base: Upload documents and ask questions about their content
+3. Image Generation: Generate images from text descriptions
+4. Audio Processing: Convert speech to text and text to speech
+5. Content Moderation: Automatic filtering of inappropriate content
+
+Technical Stack:
+- Frontend: React with TypeScript, Vite build tool
+- Backend: Node.js with Express server
+- Database: None required, using in-memory storage
+- AI APIs: OpenAI GPT, DALL-E, Whisper, and Embeddings
+
+Installation Instructions:
+1. Clone the repository
+2. Install dependencies with npm install
+3. Set up your OpenAI API key in environment variables
+4. Run the development server with npm run dev
+5. Open your browser to localhost:3000
+
+Usage Tips:
+- Enable different features using the sidebar toggles
+- Upload text documents to enhance the knowledge base
+- Ask questions about uploaded documents
+- Try generating images by asking to "create an image of..."
+- Use voice input when the audio feature is enabled
+
+This document can be used to test the knowledge base functionality by asking questions about the application features, installation, or usage.
