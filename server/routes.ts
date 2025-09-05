@@ -20,24 +20,38 @@ import { integrationService } from "./services/week4/integrationService.js";
 const upload = multer({
   dest: "uploads/",
   limits: {
-    fileSize: parseInt(process.env.MAX_FILE_SIZE || "10485760"), // 10MB default
+    fileSize: parseInt(process.env.MAX_FILE_SIZE || "26214400"), // 25MB for audio files
   },
   fileFilter: (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
     // Allow documents and audio files
     const allowedMimes = [
+      // Document types
       "text/plain",
       "application/pdf",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "audio/mpeg",
-      "audio/wav",
-      "audio/mp4",
-      "audio/webm",
+      // Audio types - expanded list for better compatibility
+      "audio/mpeg", "audio/mp3", "audio/mp4", "audio/m4a", 
+      "audio/wav", "audio/wave", "audio/webm", "audio/ogg",
+      "audio/flac", "audio/aac", "audio/x-m4a", "audio/x-wav",
+      "video/mp4", // Some MP4 files are detected as video
+      "application/octet-stream", // Fallback for files with unknown MIME
     ];
+
+    // For audio endpoint, be more permissive with file extensions
+    if (req.route && req.route.path === "/api/audio/transcribe") {
+      const audioExtensions = [".mp3", ".wav", ".m4a", ".mp4", ".mpeg", ".mpga", ".flac", ".ogg", ".webm"];
+      const fileExtension = path.extname(file.originalname).toLowerCase(); // Use imported path module
+      
+      if (audioExtensions.includes(fileExtension)) {
+        cb(null, true);
+        return;
+      }
+    }
     
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error(`File type ${file.mimetype} not supported. Please use .txt, .pdf, or .docx files for documents.`));
+      cb(new Error(`File type ${file.mimetype} not supported. Please use supported audio formats (.mp3, .wav, .m4a, etc.) or document formats (.txt, .pdf, .docx).`));
     }
   },
 });
@@ -408,24 +422,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const transcription = await audioService.transcribeAudio({
-        filePath: req.file.path,
-        sessionId,
-        language,
-        prompt,
-      });
-      
-      // Clean up uploaded file
-      fs.unlinkSync(req.file.path);
-      
-      res.json({
-        success: true,
-        transcription,
-      });
+      // Get the original file extension
+      const originalExtension = path.extname(req.file.originalname).toLowerCase();
+      const tempFilePath = req.file.path;
+      const tempFileWithExtension = tempFilePath + originalExtension;
+
+      // Rename the file to include the original extension
+      fs.renameSync(tempFilePath, tempFileWithExtension);
+
+      try {
+        // Validate audio file
+        const validation = audioService.validateAudioFile(req.file.originalname, req.file.size);
+        if (!validation.isValid) {
+          // Clean up the file
+          fs.unlinkSync(tempFileWithExtension);
+          return res.status(400).json({
+            success: false,
+            error: `Invalid audio file: ${validation.issues.join(", ")}`,
+          });
+        }
+
+        const transcription = await audioService.transcribeAudio({
+          filePath: tempFileWithExtension, // Use file with extension
+          sessionId,
+          language,
+          prompt,
+        });
+        
+        // Clean up uploaded file
+        fs.unlinkSync(tempFileWithExtension);
+        
+        res.json({
+          success: true,
+          transcription,
+        });
+      } catch (error) {
+        // Make sure to clean up the file even if transcription fails
+        if (fs.existsSync(tempFileWithExtension)) {
+          fs.unlinkSync(tempFileWithExtension);
+        }
+        throw error;
+      }
     } catch (error) {
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : "Failed to transcribe audio",
+      });
+    }
+  });
+
+  /**
+   * Get audio transcription history
+   * GET /api/audio/transcriptions/:sessionId
+   */
+  app.get("/api/audio/transcriptions/:sessionId", async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+      
+      if (!sessionId) {
+        return res.status(400).json({
+          success: false,
+          error: "SessionId is required",
+        });
+      }
+
+      const transcriptions = audioService.getTranscriptionHistory(sessionId);
+      
+      res.json({
+        success: true,
+        transcriptions,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to get transcription history",
+      });
+    }
+  });
+
+  /**
+   * Remove audio transcription
+   * DELETE /api/audio/transcriptions/:sessionId/:transcriptionId
+   */
+  app.delete("/api/audio/transcriptions/:sessionId/:transcriptionId", async (req, res) => {
+    try {
+      const { sessionId, transcriptionId } = req.params;
+      
+      if (!sessionId || !transcriptionId) {
+        return res.status(400).json({
+          success: false,
+          error: "SessionId and transcriptionId are required",
+        });
+      }
+
+      const removed = audioService.removeTranscription(sessionId, transcriptionId);
+      
+      if (removed) {
+        res.json({
+          success: true,
+          message: "Transcription removed successfully",
+          transcriptionId,
+        });
+      } else {
+        res.status(404).json({
+          success: false,
+          error: "Transcription not found",
+        });
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to remove transcription",
       });
     }
   });

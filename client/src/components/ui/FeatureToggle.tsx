@@ -6,6 +6,7 @@ interface FeatureToggleProps {
   enabled: boolean;
   color: string;
   onChange: (enabled: boolean) => void;
+  disabled?: boolean;
 }
 
 /**
@@ -17,25 +18,38 @@ export function FeatureToggle({
   icon, 
   enabled, 
   color, 
-  onChange 
+  onChange,
+  disabled = false
 }: FeatureToggleProps) {
   
   return (
     <div 
-      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer transition-colors hover:bg-slate-100"
-      onClick={() => onChange(!enabled)}
+      className={cn(
+        "flex items-center justify-between p-3 bg-slate-50 rounded-lg transition-colors",
+        disabled 
+          ? "cursor-not-allowed opacity-50" 
+          : "cursor-pointer hover:bg-slate-100"
+      )}
+      onClick={() => !disabled && onChange(!enabled)}
       data-testid={`feature-toggle-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <div className="flex items-center space-x-3">
         <span className="text-lg">{icon}</span>
-        <span className="text-sm font-medium text-slate-700">{label}</span>
+        <span className={cn(
+          "text-sm font-medium",
+          disabled ? "text-slate-400" : "text-slate-700"
+        )}>{label}</span>
       </div>
       
       {/* Toggle Switch */}
       <div 
         className={cn(
           "w-10 h-5 rounded-full relative transition-colors duration-200",
-          enabled ? color : "bg-slate-300"
+          disabled 
+            ? "bg-slate-200" 
+            : enabled 
+              ? color 
+              : "bg-slate-300"
         )}
       >
         <div 

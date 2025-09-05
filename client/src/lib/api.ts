@@ -44,11 +44,7 @@ export const api = {
     const formData = new FormData();
     formData.append("document", file);
     
-    const response = await fetch("/api/knowledge-base/upload", {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    });
+    const response = await apiRequest("POST", "/api/knowledge-base/upload", formData, true);
     
     if (!response.ok) {
       throw new Error(`Upload failed: ${response.statusText}`);
@@ -110,11 +106,7 @@ export const api = {
       formData.append("prompt", options.prompt);
     }
     
-    const response = await fetch("/api/audio/transcribe", {
-      method: "POST",
-      body: formData,
-      credentials: "include",
-    });
+    const response = await apiRequest("POST", "/api/audio/transcribe", formData, true);
     
     if (!response.ok) {
       throw new Error(`Transcription failed: ${response.statusText}`);
@@ -130,6 +122,16 @@ export const api = {
     speed?: number;
   }) {
     const response = await apiRequest("POST", "/api/audio/tts", data);
+    return response.json();
+  },
+
+  async getTranscriptions(sessionId: string) {
+    const response = await apiRequest("GET", `/api/audio/transcriptions/${sessionId}`);
+    return response.json();
+  },
+
+  async removeTranscription(sessionId: string, transcriptionId: string) {
+    const response = await apiRequest("DELETE", `/api/audio/transcriptions/${sessionId}/${transcriptionId}`);
     return response.json();
   },
 

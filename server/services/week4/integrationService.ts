@@ -65,7 +65,7 @@ export class IntegrationService {
       // Step 2: Determine request type and route accordingly
       const requestType = this.analyzeRequestType(request.message);
 
-console.log(`Request type identified as: ${requestType}`);
+      console.log(`Request type identified as: ${requestType}`);
 
       response.requestType = requestType;
 

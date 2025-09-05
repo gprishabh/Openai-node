@@ -9,11 +9,11 @@ import { useToast } from "@/hooks/use-toast";
  */
 export function useOpenAI(sessionId: string) {
   const [features, setFeatures] = useState({
-    chat: true,
+    chat: true, // Start with Chat enabled by default
     knowledgeBase: true,
-    imageGeneration: false,
-    audioInput: false,
-    textToSpeech: false,
+    imageGeneration: true,
+    audioInput: true,
+    textToSpeech: true,
     moderation: true,
   });
 
@@ -51,9 +51,42 @@ export function useOpenAI(sessionId: string) {
 
   // Update features function
   const updateFeatures = useCallback(async (newFeatures: typeof features) => {
+    // Special logic for Chat toggle: when Chat is disabled, disable all other features
+    if (!newFeatures.chat && features.chat) {
+      // Chat was just disabled, disable all other features
+      newFeatures = {
+        chat: false,
+        knowledgeBase: false,
+        imageGeneration: false,
+        audioInput: false,
+        textToSpeech: false,
+        moderation: false,
+      };
+      
+      toast({
+        title: "Chat Mode Disabled",
+        description: "All advanced features have been disabled. Only basic functionality is available.",
+      });
+    } else if (newFeatures.chat && !features.chat) {
+      // Chat was just enabled, enable some default features
+      newFeatures = {
+        chat: true,
+        knowledgeBase: true,
+        imageGeneration: true,
+        audioInput: true,
+        textToSpeech: true,
+        moderation: true,
+      };
+      
+      toast({
+        title: "Chat Mode Enabled",
+        description: "Advanced AI assistant features are now available. You can toggle individual features in the sidebar.",
+      });
+    }
+    
     setFeatures(newFeatures);
     await updateFeaturesMutation.mutateAsync(newFeatures);
-  }, [updateFeaturesMutation]);
+  }, [updateFeaturesMutation, features, toast]);
 
   // Check API connectivity
   useEffect(() => {

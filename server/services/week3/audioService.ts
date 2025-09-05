@@ -24,6 +24,22 @@ export class AudioService {
         throw new Error(`Audio file not found: ${request.filePath}`);
       }
 
+      // Get file stats and validate
+      const fileStats = fs.statSync(request.filePath);
+      const filename = path.basename(request.filePath);
+      const fileExtension = path.extname(filename).toLowerCase();
+      
+      console.log(`Transcribing audio file: ${filename}`);
+      console.log(`File size: ${fileStats.size} bytes`);
+      console.log(`File extension: ${fileExtension}`);
+      console.log(`File path: ${request.filePath}`);
+
+      // Validate the file format before sending to OpenAI
+      const validation = this.validateAudioFile(filename, fileStats.size);
+      if (!validation.isValid) {
+        throw new Error(`Invalid audio file: ${validation.issues.join(", ")}`);
+      }
+
       // Create read stream for the audio file
       const audioFile = fs.createReadStream(request.filePath);
 
@@ -37,9 +53,10 @@ export class AudioService {
         temperature: request.temperature || 0,
       });
 
-      // Get file stats for metadata
-      const fileStats = fs.statSync(request.filePath);
-      const filename = path.basename(request.filePath);
+      if(transcription.text.trim().length === 0) {
+        console.error("Transcription resulted in empty text");
+        throw new Error("Transcription resulted in empty text");
+      }
 
       // Create response object
       const transcriptionResponse: AudioTranscriptionResponse = {
@@ -59,11 +76,17 @@ export class AudioService {
       history.push(transcriptionResponse);
       this.transcriptionHistory.set(request.sessionId, history);
 
-      console.log(`Audio transcribed: ${filename} (${transcription.text.length} characters)`);
+      console.log(`Audio transcribed successfully: ${filename} (${transcription.text.length} characters)`);
+      console.log(`Transcription text: "${transcription.text.substring(0, 100)}${transcription.text.length > 100 ? '...' : ''}"`);
 
       return transcriptionResponse;
     } catch (error) {
       console.error("Error transcribing audio:", error);
+      console.error("Error details:", {
+        message: error instanceof Error ? error.message : "Unknown error",
+        filePath: request.filePath,
+        fileExists: fs.existsSync(request.filePath),
+      });
       throw new Error(`Audio transcription failed: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
@@ -175,6 +198,27 @@ export class AudioService {
   }
 
   /**
+   * Remove a specific transcription from history
+   * @param sessionId - Session identifier
+   * @param transcriptionId - Transcription identifier
+   * @returns boolean - Success status
+   */
+  removeTranscription(sessionId: string, transcriptionId: string): boolean {
+    const history = this.transcriptionHistory.get(sessionId) || [];
+    const initialLength = history.length;
+    
+    const filteredHistory = history.filter(t => t.id !== transcriptionId);
+    
+    if (filteredHistory.length < initialLength) {
+      this.transcriptionHistory.set(sessionId, filteredHistory);
+      console.log(`Transcription removed: ${transcriptionId} from session ${sessionId}`);
+      return true;
+    }
+    
+    return false;
+  }
+
+  /**
    * Get TTS history for a session
    * @param sessionId - Session identifier
    * @returns Array of TTS results
@@ -232,17 +276,25 @@ export class AudioService {
     issues: string[];
   } {
     const issues: string[] = [];
-    const maxSize = 25 * 1024 * 1024; // 25MB limit
-    const supportedFormats = [".mp3", ".mp4", ".mpeg", ".mpga", ".m4a", ".wav", ".webm"];
+    const maxSize = 25 * 1024 * 1024; // 25MB limit per OpenAI docs
+    
+    // Supported formats according to OpenAI Whisper documentation
+    const supportedFormats = [".flac", ".m4a", ".mp3", ".mp4", ".mpeg", ".mpga", ".oga", ".ogg", ".wav", ".webm"];
 
     // Check file size
     if (fileSize > maxSize) {
       issues.push(`File size ${Math.round(fileSize / 1024 / 1024)}MB exceeds maximum of 25MB`);
     }
 
+    if (fileSize === 0) {
+      issues.push("File is empty");
+    }
+
     // Check file format
     const extension = path.extname(filename).toLowerCase();
-    if (!supportedFormats.includes(extension)) {
+    if (!extension) {
+      issues.push("File has no extension");
+    } else if (!supportedFormats.includes(extension)) {
       issues.push(`File format ${extension} is not supported. Supported formats: ${supportedFormats.join(", ")}`);
     }
 

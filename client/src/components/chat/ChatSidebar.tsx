@@ -65,13 +65,6 @@ export function ChatSidebar({
 
   const featureList = [
     {
-      key: "chat",
-      label: "Chat",
-      icon: "💬",
-      color: "bg-blue-500",
-      enabled: features.chat,
-    },
-    {
       key: "knowledgeBase",
       label: "Knowledge Base",
       icon: "📚",
@@ -107,6 +100,14 @@ export function ChatSidebar({
       enabled: features.moderation,
     },
   ];
+
+  const chatFeature = {
+    key: "chat",
+    label: "Basic Chat Mode",
+    icon: "💬",
+    color: "bg-blue-500",
+    enabled: features.chat,
+  };
 
   return (
     <div className="w-80 bg-white border-r border-slate-200 flex flex-col">
@@ -151,7 +152,49 @@ export function ChatSidebar({
 
       {/* Features Panel */}
       <div className="p-6 flex-1">
-        <h3 className="text-sm font-medium text-slate-700 mb-4">Available Features</h3>
+        {/* Chat Mode Toggle - Prominent Section */}
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-slate-700 mb-3">Chat Mode</h3>
+          <div className="border-2 border-blue-200 rounded-lg p-1">
+            <FeatureToggle
+              key={chatFeature.key}
+              label={chatFeature.label}
+              icon={chatFeature.icon}
+              enabled={chatFeature.enabled}
+              color={chatFeature.color}
+              onChange={(enabled) => onFeatureToggle(chatFeature.key, enabled)}
+              data-testid={`toggle-${chatFeature.key}`}
+            />
+          </div>
+          {chatFeature.enabled ? (
+            <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center space-x-2">
+                <span className="text-green-500 text-sm">✨</span>
+                <span className="text-xs text-green-700 font-medium">
+                  Advanced Mode Active
+                </span>
+              </div>
+              <p className="text-xs text-green-600 mt-1">
+                All AI assistant features are available. Toggle individual features below.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-3 p-3 bg-orange-50 rounded-lg border border-orange-200">
+              <div className="flex items-center space-x-2">
+                <span className="text-orange-500 text-sm">⚠️</span>
+                <span className="text-xs text-orange-700 font-medium">
+                  Chat Mode Inactive
+                </span>
+              </div>
+              <p className="text-xs text-orange-600 mt-1">
+                All features except <b>Audio Transcription</b> are disabled when Chat Mode is off. Enable Chat Mode to access all the AI capabilities.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Advanced Features */}
+        <h3 className="text-sm font-medium text-slate-700 mb-4">Advanced Features</h3>
         <div className="space-y-3">
           {featureList.map((feature) => (
             <FeatureToggle
@@ -161,6 +204,7 @@ export function ChatSidebar({
               enabled={feature.enabled}
               color={feature.color}
               onChange={(enabled) => onFeatureToggle(feature.key, enabled)}
+              disabled={!features.chat}
               data-testid={`toggle-${feature.key}`}
             />
           ))}
