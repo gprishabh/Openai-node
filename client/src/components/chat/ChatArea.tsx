@@ -24,6 +24,7 @@ interface ChatAreaProps {
   onSendMessage: (message: string, options?: {
     enableTTS?: boolean;
     ttsVoice?: string;
+    useStreaming?: boolean;
   }) => Promise<void>;
   onClearHistory: () => void;
 }

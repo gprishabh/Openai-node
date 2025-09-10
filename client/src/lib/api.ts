@@ -29,6 +29,28 @@ export const api = {
     return response.json();
   },
 
+  // Streaming version of integrated message
+  async sendIntegratedMessageStream(data: {
+    message: string;
+    sessionId: string;
+    enableTTS?: boolean;
+    ttsVoice?: string;
+  }) {
+    const response = await fetch("/api/chat/integrated/stream", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response;
+  },
+
   async getChatHistory(sessionId: string) {
     const response = await apiRequest("GET", `/api/chat/history/${sessionId}`);
     return response.json();

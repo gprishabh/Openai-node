@@ -32,6 +32,7 @@ interface InputAreaProps {
   onSendMessage: (message: string, options?: {
     enableTTS?: boolean;
     ttsVoice?: string;
+    useStreaming?: boolean;
   }) => Promise<void>;
   isLoading: boolean;
   sessionId: string;
@@ -251,6 +252,7 @@ export function InputArea({ features, onSendMessage, isLoading, sessionId, onTra
     try {
       await onSendMessage(messageToSend, {
         enableTTS: enableTTS && features.textToSpeech,
+        useStreaming: streamResponse,
       });
     } catch (error) {
       console.error("Failed to send message:", error);

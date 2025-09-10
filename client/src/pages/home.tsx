@@ -21,6 +21,8 @@ export default function Home() {
     initializeChat,
   } = useChat(sessionId);
 
+  console.log("isLoading", isLoading)
+
   // OpenAI feature management
   const {
     features,
@@ -51,6 +53,7 @@ export default function Home() {
   const handleSendMessage = async (message: string, options?: {
     enableTTS?: boolean;
     ttsVoice?: string;
+    useStreaming?: boolean;
   }) => {
     await sendMessage(message, options);
   };

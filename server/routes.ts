@@ -123,6 +123,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   /**
+   * Send streaming chat message
+   * POST /api/chat/stream
+   */
+  app.post("/api/chat/stream", async (req, res) => {
+    try {
+      const { message, sessionId } = req.body;
+      
+      if (!message || !sessionId) {
+        return res.status(400).json({
+          success: false,
+          error: "Message and sessionId are required",
+        });
+      }
+
+      // Set headers for Server-Sent Events
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+
+      // Send initial response
+      res.write('data: {"type":"start","sessionId":"' + sessionId + '"}\n\n');
+
+      try {
+        // Stream the response
+        for await (const chunk of chatService.sendStreamingMessage({ message, sessionId })) {
+          res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        }
+        
+        // End the stream
+        res.write('data: {"type":"end"}\n\n');
+        res.end();
+      } catch (streamError) {
+        res.write(`data: ${JSON.stringify({
+          type: "error",
+          error: streamError instanceof Error ? streamError.message : "Streaming failed",
+          sessionId
+        })}\n\n`);
+        res.end();
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to start streaming",
+      });
+    }
+  });
+
+  /**
    * Get chat history
    * GET /api/chat/history/:sessionId
    */
@@ -662,6 +712,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : "Failed to process integrated request",
+      });
+    }
+  });
+
+  /**
+   * Unified streaming chat endpoint with all features
+   * POST /api/chat/integrated/stream
+   */
+  app.post("/api/chat/integrated/stream", async (req, res) => {
+    try {
+      const { message, sessionId, enableTTS, ttsVoice } = req.body;
+      
+      if (!message || !sessionId) {
+        return res.status(400).json({
+          success: false,
+          error: "Message and sessionId are required",
+        });
+      }
+
+      // Set headers for Server-Sent Events
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', 'Cache-Control');
+
+      // Send initial response
+      res.write('data: {"type":"start","sessionId":"' + sessionId + '"}\n\n');
+
+      try {
+        // For streaming, we'll use the basic chat service streaming
+        // and handle other features after completion
+        let finalResponse = null;
+        
+        for await (const chunk of chatService.sendStreamingMessage({ message, sessionId })) {
+          if (chunk.type === "chunk") {
+            res.write(`data: ${JSON.stringify({
+              type: "chunk",
+              content: chunk.content,
+              messageId: chunk.messageId,
+              sessionId: chunk.sessionId
+            })}\n\n`);
+          } else if (chunk.type === "complete") {
+            // Store the final response for additional processing
+            finalResponse = chunk.message;
+            res.write(`data: ${JSON.stringify({
+              type: "complete",
+              message: chunk.message,
+              sessionId: chunk.sessionId
+            })}\n\n`);
+          } else if (chunk.type === "error") {
+            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+            res.end();
+            return;
+          }
+        }
+
+        // Process additional features (image, audio, etc.) after chat completion
+        if (finalResponse) {
+          try {
+            const integratedResponse = await integrationService.processRequest({
+              message,
+              sessionId,
+              enableTTS,
+              ttsVoice,
+            });
+
+            // Send any additional features (images, audio, etc.)
+            if (integratedResponse.image) {
+              res.write(`data: ${JSON.stringify({
+                type: "image",
+                image: integratedResponse.image,
+                sessionId
+              })}\n\n`);
+            }
+
+            if (integratedResponse.audio) {
+              res.write(`data: ${JSON.stringify({
+                type: "audio",
+                audio: integratedResponse.audio,
+                sessionId
+              })}\n\n`);
+            }
+
+            if (integratedResponse.knowledgeBase) {
+              res.write(`data: ${JSON.stringify({
+                type: "knowledgeBase",
+                knowledgeBase: integratedResponse.knowledgeBase,
+                sessionId
+              })}\n\n`);
+            }
+
+            if (integratedResponse.moderation) {
+              res.write(`data: ${JSON.stringify({
+                type: "moderation",
+                moderation: integratedResponse.moderation,
+                sessionId
+              })}\n\n`);
+            }
+          } catch (integrationError) {
+            console.error("Error processing additional features:", integrationError);
+            // Continue anyway, the chat response was successful
+          }
+        }
+        
+        // End the stream
+        res.write('data: {"type":"end"}\n\n');
+        res.end();
+      } catch (streamError) {
+        res.write(`data: ${JSON.stringify({
+          type: "error",
+          error: streamError instanceof Error ? streamError.message : "Streaming failed",
+          sessionId
+        })}\n\n`);
+        res.end();
+      }
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to start integrated streaming",
       });
     }
   });
