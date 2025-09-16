@@ -21,8 +21,6 @@ export default function Home() {
     initializeChat,
   } = useChat(sessionId);
 
-  console.log("isLoading", isLoading)
-
   // OpenAI feature management
   const {
     features,

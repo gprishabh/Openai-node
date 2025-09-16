@@ -74,6 +74,132 @@ This feature is useful for:
 
 The whole process typically takes just a few seconds to a minute, depending on the length of your audio file and current system load.
 
+### Voice Recording & Real-Time Transcription
+
+The voice recording feature allows you to speak directly into your device's microphone and have your words instantly converted to text, creating a hands-free way to input messages and interact with the AI. This feature brings natural conversation to your digital experience.
+
+#### How It Works
+
+**What Users Experience:**
+
+1. **Click the microphone button** located next to the message input area
+2. **Grant microphone permission** when your browser asks (first time only)
+3. **Start speaking** and see real-time visual feedback showing your voice is being captured
+4. **Click the microphone again** to stop recording when you're finished
+5. **Watch your spoken words appear** as text in the message input box automatically
+
+**What Happens Behind the Scenes:**
+
+##### Step 1: Microphone Access and Setup
+- When you click the microphone button, the system requests access to your device's microphone
+- Your browser will show a permission prompt asking if you want to allow microphone access
+- Once granted, the system sets up high-quality audio capture with noise reduction and echo cancellation enabled
+- The microphone is configured to capture clear audio at 44.1 kHz (CD quality) for optimal transcription results
+- If your device doesn't have a microphone or your browser doesn't support recording, you'll get a helpful error message
+
+##### Step 2: Real-Time Audio Monitoring and Feedback
+- As soon as recording starts, the system begins monitoring your voice volume in real-time
+- A visual indicator appears above the input box showing "Recording..." with a pulsing red dot
+- **Audio level bars** display the strength of your voice - they light up more as you speak louder
+- This gives you immediate feedback that the system is "hearing" you and recording properly
+- The visual feedback helps you know if you're speaking too quietly or if there are any audio issues
+
+##### Step 3: Smart Audio Capture and Processing
+- Your voice is captured continuously and stored temporarily in your browser's memory
+- The system collects audio data in small chunks (every second) for efficient processing
+- Audio is recorded in WebM format (or MP4 if WebM isn't supported) for maximum browser compatibility
+- No audio data is sent to the server until you stop recording - everything stays private until you choose to process it
+- The recording automatically handles background noise, echo, and volume variations
+
+##### Step 4: Speech-to-Text Conversion
+- When you stop recording, the system immediately begins converting your speech to text
+- Your recorded audio is sent to OpenAI's advanced Whisper speech recognition service
+- Whisper can understand natural speech patterns, handling pauses, "ums," and conversational language
+- The AI automatically detects the language you're speaking (though it's optimized for English)
+- The transcription process typically takes just 2-5 seconds, even for longer recordings
+
+##### Step 5: Intelligent Text Integration
+- Once transcription is complete, the text automatically appears in your message input box
+- If you already had text typed, the new transcribed text is intelligently added with proper spacing
+- You can continue editing the transcribed text, adding to it, or correcting any mistakes before sending
+- The transcribed text is treated just like any other typed message - you can use it for chat, image generation, or any other feature
+- A notification confirms the transcription was successful and shows a preview of what was captured
+
+##### Step 6: Session Management and History
+- Each voice recording and its transcription are saved to your session history
+- You can view all your past voice recordings in a dedicated section below the input area
+- Each entry shows the original filename, confidence level, duration, and the full transcribed text
+- Recordings include metadata like file size, timestamp, and transcription accuracy
+- You can remove individual recordings from your history if desired for privacy
+
+#### Key Features and Benefits
+
+**Browser-Based Recording**: No apps to download - works directly in your web browser using modern audio APIs.
+
+**Real-Time Feedback**: Visual indicators show recording status and audio levels so you know exactly what's happening.
+
+**Hands-Free Input**: Perfect for when typing is inconvenient or you prefer speaking your thoughts naturally.
+
+**Smart Integration**: Transcribed text seamlessly integrates with existing typed text and all other features.
+
+**High Accuracy**: Uses OpenAI's Whisper technology, which handles accents, background noise, and natural speech patterns.
+
+**Privacy Focused**: Audio is only processed when you choose to stop recording - nothing is sent until you're ready.
+
+**Session History**: Keep track of all your voice inputs with full transcripts and easy management.
+
+**Error Recovery**: Graceful handling of microphone issues, browser compatibility, and transcription errors.
+
+#### Visual Experience
+
+**Recording Indicator**: When active, you'll see a prominent red recording banner with:
+- A pulsing red dot showing recording is active
+- "Recording..." text to confirm the status
+- Five audio level bars that light up based on your voice volume
+- Clean, non-intrusive design that doesn't block your view
+
+**Button States**: The microphone button changes to show what's happening:
+- **Microphone icon**: Ready to start recording
+- **Microphone with slash**: Currently recording (click to stop)
+- **Spinning indicator**: Processing your recording into text
+- **Disabled appearance**: When features aren't available
+
+#### Browser and Device Requirements
+
+**Supported Browsers**: Modern Chrome, Firefox, Safari, and Edge (any browser supporting MediaRecorder API).
+
+**Device Requirements**: Any device with a microphone - laptops, desktops, tablets, or phones.
+
+**Permissions**: One-time microphone permission required (your browser will ask).
+
+**Internet Connection**: Required for speech-to-text processing (transcription happens on OpenAI's servers).
+
+#### Real-World Use Cases
+
+This feature is perfect for:
+- **Mobile users** who prefer speaking over typing on small screens
+- **Accessibility** for users who have difficulty typing or prefer voice input
+- **Multitasking** when your hands are busy but you want to send a message
+- **Natural conversation** when you want to express complex thoughts more fluidly
+- **Voice memos** that get automatically converted to searchable text
+- **Quick input** when you want to rapidly capture ideas or questions
+- **Language learners** who want to practice speaking while getting text feedback
+- **Casual interaction** when you prefer a more conversational AI experience
+
+#### Tips for Best Results
+
+**Speak Clearly**: Use your normal speaking voice - no need to speak slowly or unnaturally.
+
+**Minimize Background Noise**: Find a relatively quiet environment for best transcription accuracy.
+
+**Watch the Audio Levels**: The visual bars help ensure you're speaking at a good volume.
+
+**Short Recordings Work Best**: While there's no strict limit, shorter recordings (under 2 minutes) process faster.
+
+**Check Your Text**: Always review the transcribed text before sending - you can edit any mistakes.
+
+The voice recording feature typically processes most recordings in 3-8 seconds, providing a fast and natural way to interact with the AI through spoken conversation. The system is designed to feel intuitive and responsive, making voice input as easy as having a normal conversation.
+
 ### Document Upload for Knowledge Base
 
 The document upload feature allows users to build their own custom knowledge base by uploading documents that the AI can then reference when answering questions. This creates a personalized AI assistant that has access to your specific information.
@@ -479,6 +605,119 @@ This feature is ideal for:
 
 The text-to-speech generation process is remarkably fast and efficient, typically completing within 5-15 seconds regardless of text length. The resulting audio quality rivals professional voice recordings and is suitable for any application from personal use to commercial production.
 
+### Stream Response Feature
+
+The Stream Response feature gives you control over how you receive AI responses, allowing you to choose between seeing answers appear word-by-word in real-time or getting the complete response all at once. This feature enhances your interaction experience by providing two distinct ways to receive information.
+
+#### How It Works
+
+**What Users Experience:**
+
+1. **Notice the "Stream Response" checkbox** located below the message input area
+2. **Choose your preferred response style** by checking or unchecking the box
+3. **Send your message** and experience responses in your chosen format
+4. **Switch modes anytime** to match your current needs and preferences
+
+**What Happens Behind the Scenes:**
+
+##### Step 1: User Preference Detection
+- The system checks whether you have the "Stream Response" checkbox enabled or disabled
+- This preference is automatically remembered for your current session
+- **Streaming enabled (checkbox checked)**: Your messages will receive real-time, word-by-word responses
+- **Streaming disabled (checkbox unchecked)**: Your messages will receive complete responses all at once
+- The default setting is enabled, giving you the dynamic streaming experience
+
+##### Step 2: Different Processing Paths
+**When Streaming is Enabled:**
+- Your message is sent to a special streaming endpoint that maintains an open connection
+- The AI begins processing and sends back pieces of the response as soon as they're ready
+- Each word or phrase appears on your screen the moment it's generated
+- Additional features (like images or audio) are processed and appear after the text is complete
+
+**When Streaming is Disabled:**
+- Your message is sent to the standard endpoint for complete processing
+- The AI processes your entire request and prepares the full response
+- All content (text, images, audio, sources) is packaged together
+- Everything appears on your screen simultaneously when processing is complete
+
+##### Step 3: Real-Time Content Delivery (Streaming Mode)
+- The system uses advanced "Server-Sent Events" technology to maintain a live connection
+- As the AI generates each part of the response, it's immediately sent to your browser
+- Your screen updates continuously, showing the response building word by word
+- This creates the feeling of having a natural conversation where you can read along as the AI "thinks"
+- The connection automatically closes when the response is complete
+
+##### Step 4: Smart Content Organization
+**In Streaming Mode:**
+- Text appears first, updating in real-time as it's generated
+- Images appear as soon as they're created (after text completion)
+- Audio files become available when processing finishes
+- Knowledge base sources are displayed after the main response
+- Each type of content appears the moment it's ready
+
+**In Non-Streaming Mode:**
+- All content types are processed simultaneously in the background
+- Text, images, audio, and sources are bundled together
+- Everything appears at once when the complete response is ready
+- Perfect for situations where you want to see the full result immediately
+
+##### Step 5: Enhanced Features Integration
+- **Image Generation**: Works seamlessly with both modes - images appear after text in streaming mode, or with everything in non-streaming mode
+- **Text-to-Speech**: Audio generation begins after text completion in both modes
+- **Knowledge Base**: Source citations are provided at the end of responses in both modes
+- **Content Moderation**: Safety checks happen immediately regardless of streaming preference
+- **Error Handling**: Problems are communicated clearly in both response styles
+
+#### Key Features and Benefits
+
+**Flexible Experience**: Choose between real-time engagement or traditional complete responses.
+
+**Session Memory**: Your streaming preference is remembered throughout your session.
+
+**Feature Compatibility**: All AI capabilities (images, audio, knowledge base) work perfectly with both modes.
+
+**Natural Conversation Feel**: Streaming mode creates the experience of talking with someone in real-time.
+
+**Copy-Friendly Results**: Non-streaming mode is perfect when you need to copy complete responses.
+
+**Instant Feedback**: Streaming mode lets you know immediately that your request is being processed.
+
+**Error Recovery**: If streaming encounters problems, it gracefully falls back to standard delivery.
+
+#### When to Use Each Mode
+
+**Use Streaming Mode (Checkbox Checked) When:**
+- You want to feel engaged and see immediate progress
+- You're having a conversational interaction with the AI
+- You want to read along as the response develops
+- You're asking questions that might have long answers
+- You enjoy the real-time, interactive experience
+- You want to know immediately that your request is being processed
+
+**Use Non-Streaming Mode (Checkbox Unchecked) When:**
+- You need to copy and paste the complete response
+- You prefer to read the entire answer at once
+- You're generating content for documents or presentations
+- You want all images, audio, and text delivered together
+- You're working with slower internet connections
+- You prefer the traditional request-response interaction style
+
+#### Technical Performance
+
+**Streaming Mode Benefits:**
+- **Lower perceived wait time**: You see results immediately as they're generated
+- **Interactive feel**: Creates engaging, conversation-like experiences
+- **Progress indication**: You always know something is happening
+- **Cancellation capability**: Could potentially stop generation early (future feature)
+
+**Non-Streaming Mode Benefits:**
+- **Lower server overhead**: Single request-response cycle
+- **Better for copying**: Complete responses are easier to work with
+- **Consistent delivery**: All content arrives together
+- **Network efficiency**: Better for unstable connections
+
+The streaming feature typically adds less than 100 milliseconds to response times while providing significantly enhanced user experience and engagement. Both modes deliver identical content quality and accuracy - the difference is purely in how and when you receive the information.
+
 ## Getting Started
 
 ### Prerequisites
@@ -514,9 +753,9 @@ The text-to-speech generation process is remarkably fast and efficient, typicall
 
 ### Audio Endpoints
 
-- `POST /api/audio/transcribe` - Upload and transcribe audio files to text
-- `GET /api/audio/transcriptions/:sessionId` - Get transcription history for a session
-- `DELETE /api/audio/transcriptions/:sessionId/:transcriptionId` - Remove specific transcription
+- `POST /api/audio/transcribe` - Upload and transcribe audio files to text (supports both file upload and voice recording)
+- `GET /api/audio/transcriptions/:sessionId` - Get transcription history for a session (includes both uploaded files and voice recordings)
+- `DELETE /api/audio/transcriptions/:sessionId/:transcriptionId` - Remove specific transcription from history
 - `POST /api/audio/tts` - Convert text to speech with voice selection and speed control
 - `GET /api/audio/file/:filename` - Serve and download generated audio files
 
@@ -542,6 +781,7 @@ The text-to-speech generation process is remarkably fast and efficient, typicall
 - Knowledge base for document processing and querying
 - Image generation capabilities
 - Content moderation tools
+- Stream Response
 - Integrated features combining all capabilities
 
 ## Contributing
