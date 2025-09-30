@@ -115,6 +115,34 @@ export function useChat(sessionId: string) {
                       content: parsed.message.content || assistantMessage.content,
                       isStreaming: false, // Streaming is complete
                     };
+
+                    // Handle audio if present in the complete message
+                    if (parsed.audio) {
+                      assistantMessage.audio = {
+                        url: `/api/audio/file/${parsed.audio.filename}`,
+                        filename: parsed.audio.filename,
+                      };
+                    }
+
+                    // Handle knowledge base info if present
+                    if (parsed.knowledgeBase) {
+                      assistantMessage.sources = parsed.knowledgeBase.sources;
+                    }
+                    
+                    setMessages(prev => {
+                      const newMessages = [...prev];
+                      const lastMessage = newMessages[newMessages.length - 1];
+                      if (lastMessage && lastMessage.role === "assistant") {
+                        newMessages[newMessages.length - 1] = { ...assistantMessage };
+                      }
+                      return newMessages;
+                    });
+                  } else if (parsed.type === "audio_complete" && parsed.message && parsed.audio) {
+                    // Handle additional audio completion for regular chat responses
+                    assistantMessage.audio = {
+                      url: `/api/audio/file/${parsed.audio.filename}`,
+                      filename: parsed.audio.filename,
+                    };
                     
                     setMessages(prev => {
                       const newMessages = [...prev];

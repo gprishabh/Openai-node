@@ -242,9 +242,9 @@ export class IntegrationService {
     return this.sessionFeatures.get(sessionId) || {
       chat: true,
       knowledgeBase: true,
-      imageGeneration: false,
-      audioInput: false,
-      textToSpeech: false,
+      imageGeneration: true,
+      audioInput: true,
+      textToSpeech: true,
       moderation: true,
     };
   }
@@ -443,6 +443,16 @@ export class IntegrationService {
    * Process integrated chat request with streaming response
    * @param request - Comprehensive chat request with feature flags and content
    * @returns AsyncGenerator<StreamingResponse> - Streaming response chunks with knowledge base integration
+   * 
+   * Note: This streaming implementation supports:
+   * - Knowledge base queries and responses
+   * - Text-to-speech (TTS) generation
+   * - Content moderation
+   * - Regular chat responses
+   * 
+   * Limitations in streaming mode:
+   * - Image generation is not supported (handled with informative message)
+   * - Audio input (voice recording) uses a separate upload/transcription flow
    */
   async* processStreamingRequest(request: IntegratedChatRequest): AsyncGenerator<any> {
     try {
@@ -476,6 +486,49 @@ export class IntegrationService {
       // Step 2: Determine request type and route accordingly
       const requestType = this.analyzeRequestType(request.message);
       console.log(`Streaming request type identified as: ${requestType}`);
+
+      // Step 2.5: Handle unsupported features in streaming mode
+      if (requestType === "image_generation") {
+        yield {
+          type: "start",
+          sessionId: request.sessionId,
+          requestType,
+          features,
+          moderation: moderationResult,
+        };
+
+        const messageId = this.generateResponseId();
+        const notSupportedMessage = "Image generation is not currently supported in streaming mode. Please disable streaming to use image generation features.";
+        
+        // Simulate streaming the not-supported message
+        const words = notSupportedMessage.split(' ');
+        for (let i = 0; i < words.length; i++) {
+          yield {
+            type: "chunk",
+            content: words[i] + (i < words.length - 1 ? ' ' : ''),
+            messageId,
+            sessionId: request.sessionId,
+          };
+          
+          // Small delay to simulate real streaming
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+
+        yield {
+          type: "complete",
+          message: {
+            id: messageId,
+            role: "assistant",
+            content: notSupportedMessage,
+            timestamp: new Date(),
+            sessionId: request.sessionId,
+          },
+          sessionId: request.sessionId,
+        };
+
+        this.updateStatistics(request.sessionId, "general_chat");
+        return;
+      }
 
       // Step 3: Check knowledge base first if enabled and has documents
       let useKnowledgeBase = false;
@@ -536,6 +589,22 @@ export class IntegrationService {
                 await new Promise(resolve => setTimeout(resolve, 50));
               }
 
+              // Generate TTS if enabled and requested
+              let audioResponse = null;
+              if (features.textToSpeech && request.enableTTS) {
+                try {
+                  console.log("Generating TTS for knowledge base response");
+                  audioResponse = await audioService.textToSpeech({
+                    text: responseContent,
+                    voice: (request.ttsVoice || "alloy") as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer",
+                    sessionId: request.sessionId,
+                  });
+                } catch (error) {
+                  console.error("TTS generation failed for knowledge base response:", error);
+                  // Don't fail the entire request if TTS fails
+                }
+              }
+
               // Send completion with full message and knowledge base info
               yield {
                 type: "complete",
@@ -547,6 +616,7 @@ export class IntegrationService {
                   sessionId: request.sessionId,
                 },
                 knowledgeBase: kbResponse,
+                audio: audioResponse,
                 sessionId: request.sessionId,
               };
 
@@ -575,12 +645,47 @@ export class IntegrationService {
           moderation: moderationResult,
         };
 
-        // Use regular chat service streaming
+        // Use regular chat service streaming and collect response for TTS
+        let fullResponseContent = "";
+        let lastMessage = null;
+        
         for await (const chunk of chatService.sendStreamingMessage({
           message: request.message,
           sessionId: request.sessionId,
         })) {
+          // Forward the chunk
           yield chunk;
+          
+          // Collect full response content for TTS
+          if (chunk.type === "chunk" && chunk.content) {
+            fullResponseContent += chunk.content;
+          } else if (chunk.type === "complete" && chunk.message) {
+            lastMessage = chunk.message;
+            fullResponseContent = chunk.message.content;
+          }
+        }
+
+        // Generate TTS if enabled and we have content
+        if (features.textToSpeech && request.enableTTS && fullResponseContent && lastMessage) {
+          try {
+            console.log("Generating TTS for chat response");
+            const audioResponse = await audioService.textToSpeech({
+              text: fullResponseContent,
+              voice: (request.ttsVoice || "alloy") as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer",
+              sessionId: request.sessionId,
+            });
+
+            // Send updated complete message with audio
+            yield {
+              type: "audio_complete",
+              message: lastMessage,
+              audio: audioResponse,
+              sessionId: request.sessionId,
+            };
+          } catch (error) {
+            console.error("TTS generation failed for chat response:", error);
+            // Don't fail the entire request if TTS fails
+          }
         }
 
         this.updateStatistics(request.sessionId, "general_chat");
