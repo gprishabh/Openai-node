@@ -438,6 +438,167 @@ export class IntegrationService {
       style: "vivid",
     });
   }
+
+  /**
+   * Process integrated chat request with streaming response
+   * @param request - Comprehensive chat request with feature flags and content
+   * @returns AsyncGenerator<StreamingResponse> - Streaming response chunks with knowledge base integration
+   */
+  async* processStreamingRequest(request: IntegratedChatRequest): AsyncGenerator<any> {
+    try {
+      // Get session features configuration
+      const features = this.getSessionFeatures(request.sessionId);
+      
+      console.log(`Processing streaming request for session ${request.sessionId}:`, features);
+
+      // Step 1: Content moderation (if enabled)
+      let moderationResult = null;
+      if (features.moderation) {
+        moderationResult = await moderationService.moderateContent({
+          content: request.message,
+          sessionId: request.sessionId,
+        });
+
+        // If content is flagged, return safe response and stop processing
+        if (moderationResult.flagged) {
+          const safeResponse = moderationService.generateSafeResponse(moderationResult);
+          yield {
+            type: "moderation_blocked",
+            content: safeResponse,
+            moderation: moderationResult,
+            sessionId: request.sessionId,
+          };
+          this.updateStatistics(request.sessionId, "moderation_blocked");
+          return;
+        }
+      }
+
+      // Step 2: Determine request type and route accordingly
+      const requestType = this.analyzeRequestType(request.message);
+      console.log(`Streaming request type identified as: ${requestType}`);
+
+      // Step 3: Check knowledge base first if enabled and has documents
+      let useKnowledgeBase = false;
+      let kbResponse = null;
+      
+      if (features.knowledgeBase && (requestType === "knowledge_base_query" || requestType === "general_chat")) {
+        try {
+          const kbStats = knowledgeBaseService.getStatistics();
+          console.log(`Knowledge base stats for streaming:`, kbStats);
+          
+          if (kbStats.documentCount > 0) {
+            console.log(`Querying knowledge base with streaming question: "${request.message}"`);
+            kbResponse = await knowledgeBaseService.query({
+              question: request.message,
+              sessionId: request.sessionId,
+              maxResults: 3,
+              minSimilarity: 0.2,
+            });
+            
+            console.log(`Knowledge base streaming response:`, {
+              hasContext: kbResponse.hasContext,
+              confidence: kbResponse.confidence,
+              sourcesCount: kbResponse.sources.length
+            });
+            
+            // If knowledge base found relevant context, use it
+            if (kbResponse.hasContext && kbResponse.confidence > 0.15) {
+              useKnowledgeBase = true;
+              console.log("Using knowledge base response for streaming");
+              
+              // Stream the knowledge base response
+              yield {
+                type: "start",
+                sessionId: request.sessionId,
+                requestType,
+                features,
+                moderation: moderationResult,
+              };
+
+              // Stream the response content
+              const responseContent = kbResponse.answer;
+              const messageId = this.generateResponseId();
+              
+              // Simulate streaming by chunking the response
+              const words = responseContent.split(' ');
+              let currentContent = '';
+              
+              for (let i = 0; i < words.length; i++) {
+                currentContent += (i > 0 ? ' ' : '') + words[i];
+                yield {
+                  type: "chunk",
+                  content: words[i] + (i < words.length - 1 ? ' ' : ''),
+                  messageId,
+                  sessionId: request.sessionId,
+                };
+                
+                // Small delay to simulate real streaming
+                await new Promise(resolve => setTimeout(resolve, 50));
+              }
+
+              // Send completion with full message and knowledge base info
+              yield {
+                type: "complete",
+                message: {
+                  id: messageId,
+                  role: "assistant",
+                  content: responseContent,
+                  timestamp: new Date(),
+                  sessionId: request.sessionId,
+                },
+                knowledgeBase: kbResponse,
+                sessionId: request.sessionId,
+              };
+
+              this.updateStatistics(request.sessionId, "knowledge_base_query");
+              return;
+            } else {
+              console.log(`Knowledge base didn't find relevant context for streaming (confidence: ${kbResponse.confidence}, hasContext: ${kbResponse.hasContext})`);
+            }
+          } else {
+            console.log(`No documents in knowledge base for streaming (count: ${kbStats.documentCount})`);
+          }
+        } catch (error) {
+          console.error("Knowledge base query failed during streaming, falling back to general chat:", error);
+        }
+      }
+
+      // Step 4: Fall back to regular streaming chat if not using knowledge base
+      if (!useKnowledgeBase) {
+        console.log("Falling back to general streaming chat");
+        
+        yield {
+          type: "start",
+          sessionId: request.sessionId,
+          requestType,
+          features,
+          moderation: moderationResult,
+        };
+
+        // Use regular chat service streaming
+        for await (const chunk of chatService.sendStreamingMessage({
+          message: request.message,
+          sessionId: request.sessionId,
+        })) {
+          yield chunk;
+        }
+
+        this.updateStatistics(request.sessionId, "general_chat");
+      }
+
+      // Step 5: Handle additional features after completion (if needed)
+      // Note: Image generation and TTS would typically be handled after the chat completion
+      
+    } catch (error) {
+      console.error("Error processing integrated streaming request:", error);
+      
+      yield {
+        type: "error",
+        error: error instanceof Error ? error.message : "Unknown streaming error",
+        sessionId: request.sessionId,
+      };
+    }
+  }
 }
 
 export const integrationService = new IntegrationService();

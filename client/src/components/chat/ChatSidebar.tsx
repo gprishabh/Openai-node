@@ -225,20 +225,24 @@ export function ChatSidebar({
           </div>
           
           {/* Token Usage */}
+          {/*}
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-orange-400 rounded-full" />
             <span className="text-xs text-slate-500" data-testid="token-usage">
               Tokens used: {statistics.tokensUsed.toLocaleString()}
             </span>
           </div>
+          {*/}
 
           {/* Messages Count */}
+          {/*}
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-blue-400 rounded-full" />
             <span className="text-xs text-slate-500" data-testid="message-count">
               Messages: {statistics.messagesCount}
             </span>
           </div>
+          {*/}
 
           {/* Images Generated */}
           {statistics.imagesGenerated > 0 && (

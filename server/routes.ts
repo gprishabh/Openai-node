@@ -742,78 +742,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.write('data: {"type":"start","sessionId":"' + sessionId + '"}\n\n');
 
       try {
-        // For streaming, we'll use the basic chat service streaming
-        // and handle other features after completion
-        let finalResponse = null;
-        
-        for await (const chunk of chatService.sendStreamingMessage({ message, sessionId })) {
-          if (chunk.type === "chunk") {
-            res.write(`data: ${JSON.stringify({
-              type: "chunk",
-              content: chunk.content,
-              messageId: chunk.messageId,
-              sessionId: chunk.sessionId
-            })}\n\n`);
-          } else if (chunk.type === "complete") {
-            // Store the final response for additional processing
-            finalResponse = chunk.message;
-            res.write(`data: ${JSON.stringify({
-              type: "complete",
-              message: chunk.message,
-              sessionId: chunk.sessionId
-            })}\n\n`);
-          } else if (chunk.type === "error") {
-            res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        // Use the integration service for streaming to include knowledge base support
+        for await (const chunk of integrationService.processStreamingRequest({
+          message,
+          sessionId,
+          enableTTS,
+          ttsVoice,
+        })) {
+          res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+          
+          // If this is an error, end the stream
+          if (chunk.type === "error") {
             res.end();
             return;
-          }
-        }
-
-        // Process additional features (image, audio, etc.) after chat completion
-        if (finalResponse) {
-          try {
-            const integratedResponse = await integrationService.processRequest({
-              message,
-              sessionId,
-              enableTTS,
-              ttsVoice,
-            });
-
-            // Send any additional features (images, audio, etc.)
-            if (integratedResponse.image) {
-              res.write(`data: ${JSON.stringify({
-                type: "image",
-                image: integratedResponse.image,
-                sessionId
-              })}\n\n`);
-            }
-
-            if (integratedResponse.audio) {
-              res.write(`data: ${JSON.stringify({
-                type: "audio",
-                audio: integratedResponse.audio,
-                sessionId
-              })}\n\n`);
-            }
-
-            if (integratedResponse.knowledgeBase) {
-              res.write(`data: ${JSON.stringify({
-                type: "knowledgeBase",
-                knowledgeBase: integratedResponse.knowledgeBase,
-                sessionId
-              })}\n\n`);
-            }
-
-            if (integratedResponse.moderation) {
-              res.write(`data: ${JSON.stringify({
-                type: "moderation",
-                moderation: integratedResponse.moderation,
-                sessionId
-              })}\n\n`);
-            }
-          } catch (integrationError) {
-            console.error("Error processing additional features:", integrationError);
-            // Continue anyway, the chat response was successful
           }
         }
         

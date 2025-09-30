@@ -103,7 +103,7 @@ export class KnowledgeBaseService {
       }
 
       // Filter by minimum similarity threshold
-      const minSimilarity = query.minSimilarity || 0.7;
+      const minSimilarity = query.minSimilarity || 0.2;
       const relevantDocuments = similarDocuments.filter(doc => doc.similarity >= minSimilarity);
 
       console.log(`Relevant documents (similarity >= ${minSimilarity}): ${relevantDocuments.length}`);
